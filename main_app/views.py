@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.views.generic import ListView
+from django.views.generic.detail import DetailView
 from django.views.generic import CreateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from .models import Dog
+from .models import Dog, Toy
 
 def home(request):
     return render(request, 'home.html')
@@ -14,8 +16,17 @@ def dogs_index(request):
     return render(request, 'dogs/index.html', { 'dogs': dogs })
 
 def dogs_detail(request, dog_id):
-  dog = Dog.objects.get(id=dog_id)
-  return render(request, 'dogs/detail.html', { 'dog': dog })
+    dog = Dog.objects.get(id=dog_id)
+    toys_cat_doesnt_have = Toy.objects.exclude(id__in = dog.toys.all().values_list('id'))
+
+    return render(request, 'dogs/detail.html', {
+       'dog': dog, 
+       'toys': toys_cat_doesnt_have,
+    })
+
+def assoc_toy(request, dog_id, toy_id):
+    Dog.objects.get(id=dog_id).toys.add(toy_id)
+    return redirect('detail', dog_id=dog_id)
 
 class DogCreate(CreateView):
     model = Dog
@@ -30,3 +41,27 @@ class DogUpdate(UpdateView):
 class DogDelete(DeleteView):
   model = Dog
   success_url = '/dogs/'
+
+class ToyCreate(CreateView):
+    model = Toy
+    fields = ('name', 'color')
+
+
+class ToyUpdate(UpdateView):
+    model = Toy
+    fields = ('name', 'color')
+
+
+class ToyDelete(DeleteView):
+    model = Toy
+    success_url = '/toys/'
+
+
+class ToyDetail(DetailView):
+    model = Toy
+    template_name = 'toys/detail.html'
+
+
+class ToyList(ListView):
+    model = Toy
+    template_name = 'toys/index.html'
